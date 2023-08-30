@@ -1,26 +1,32 @@
-import 'package:ditonton/common/state_enum.dart';
-import 'package:ditonton/domain/entities/tv_series.dart';
+import 'package:bloc_test/bloc_test.dart';
+import 'package:ditonton/presentation/bloc/bloc.dart';
 import 'package:ditonton/presentation/pages/airing_today_tvseries_page.dart';
-import 'package:ditonton/presentation/provider/airing_today_tvseries_notifier.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/annotations.dart';
-import 'package:mockito/mockito.dart';
-import 'package:provider/provider.dart';
+import 'package:mocktail/mocktail.dart';
 
-import 'airing_today_tvseries_page_test.mocks.dart';
+import '../../dummy_data/dummy_objects.dart';
 
-@GenerateMocks([AiringTodayTVSeriesNotifier])
+
+class MockAiringTodayBloc
+    extends MockBloc<AiringTodayEvent, AiringTodayState>
+    implements AiringTodayBloc {}
+
+class AiringTodayEventFake extends Fake implements AiringTodayEvent {}
+
+class AiringTodayStateFake extends Fake implements AiringTodayState {}
+
 void main() {
-  late MockAiringTodayTVSeriesNotifier mockNotifier;
+  late MockAiringTodayBloc mockAiringTodayBloc;
 
   setUp(() {
-    mockNotifier = MockAiringTodayTVSeriesNotifier();
+    mockAiringTodayBloc = MockAiringTodayBloc();
   });
 
   Widget _makeTestableWidget(Widget body) {
-    return ChangeNotifierProvider<AiringTodayTVSeriesNotifier>.value(
-      value: mockNotifier,
+    return BlocProvider<AiringTodayBloc>(
+      create: (context) => mockAiringTodayBloc,
       child: MaterialApp(
         home: body,
       ),
@@ -29,7 +35,7 @@ void main() {
 
   testWidgets('Page should display center progress bar when loading',
           (WidgetTester tester) async {
-        when(mockNotifier.state).thenReturn(RequestState.Loading);
+        when(()=>mockAiringTodayBloc.state).thenReturn(AiringTodayLoading());
 
         final progressBarFinder = find.byType(CircularProgressIndicator);
         final centerFinder = find.byType(Center);
@@ -42,8 +48,7 @@ void main() {
 
   testWidgets('Page should display ListView when data is loaded',
           (WidgetTester tester) async {
-        when(mockNotifier.state).thenReturn(RequestState.Loaded);
-        when(mockNotifier.tvSeries).thenReturn(<TVSeries>[]);
+        when(()=>mockAiringTodayBloc.state).thenReturn(AiringTodayHasData(result: testTVSeriesList));
 
         final listViewFinder = find.byType(ListView);
 
@@ -54,8 +59,7 @@ void main() {
 
   testWidgets('Page should display text with message when Error',
           (WidgetTester tester) async {
-        when(mockNotifier.state).thenReturn(RequestState.Error);
-        when(mockNotifier.message).thenReturn('Error message');
+        when(()=>mockAiringTodayBloc.state).thenReturn(AiringTodayError('Error message'));
 
         final textFinder = find.byKey(Key('error_message'));
 

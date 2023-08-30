@@ -11,17 +11,27 @@ import 'package:http/http.dart' as http;
 
 abstract class MovieRemoteDataSource {
   Future<List<MovieModel>> getNowPlayingMovies();
+
   Future<List<MovieModel>> getPopularMovies();
+
   Future<List<MovieModel>> getTopRatedMovies();
+
   Future<MovieDetailResponse> getMovieDetail(int id);
+
   Future<List<MovieModel>> getMovieRecommendations(int id);
+
   Future<List<MovieModel>> searchMovies(String query);
 
   Future<List<TVSeriesModel>> getAiringTodayTVSeries();
+
   Future<List<TVSeriesModel>> getPopularTVSeries();
+
   Future<List<TVSeriesModel>> getTopRatedTVSeries();
+
   Future<TVSeriesDetailResponse> getTVSeriesDetail(int id);
+
   Future<List<TVSeriesModel>> getTVSeriesRecommendations(int id);
+
   Future<List<TVSeriesModel>> searchTVSeries(String query);
 }
 
@@ -108,7 +118,7 @@ class MovieRemoteDataSourceImpl implements MovieRemoteDataSource {
   @override
   Future<List<TVSeriesModel>> getAiringTodayTVSeries() async {
     final response =
-    await client.get(Uri.parse('$BASE_URL/tv/airing_today?$API_KEY'));
+        await client.get(Uri.parse('$BASE_URL/tv/airing_today?$API_KEY'));
 
     if (response.statusCode == 200) {
       return TVSeriesResponse.fromJson(json.decode(response.body)).tvSeriesList;
@@ -132,7 +142,7 @@ class MovieRemoteDataSourceImpl implements MovieRemoteDataSource {
   @override
   Future<List<TVSeriesModel>> getTopRatedTVSeries() async {
     final response =
-    await client.get(Uri.parse('$BASE_URL/tv/top_rated?$API_KEY'));
+        await client.get(Uri.parse('$BASE_URL/tv/top_rated?$API_KEY'));
 
     if (response.statusCode == 200) {
       return TVSeriesResponse.fromJson(json.decode(response.body)).tvSeriesList;
@@ -143,8 +153,7 @@ class MovieRemoteDataSourceImpl implements MovieRemoteDataSource {
 
   @override
   Future<TVSeriesDetailResponse> getTVSeriesDetail(int id) async {
-    final response =
-    await client.get(Uri.parse('$BASE_URL/tv/$id?$API_KEY'));
+    final response = await client.get(Uri.parse('$BASE_URL/tv/$id?$API_KEY'));
 
     if (response.statusCode == 200) {
       return TVSeriesDetailResponse.fromJson(json.decode(response.body));

@@ -1,5 +1,11 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:ditonton/common/constants.dart';
+import 'package:ditonton/common/crashnalytic.dart';
 import 'package:ditonton/common/utils.dart';
+import 'package:ditonton/firebase_options.dart';
+import 'package:ditonton/presentation/bloc/bloc.dart';
 import 'package:ditonton/presentation/pages/about_page.dart';
 import 'package:ditonton/presentation/pages/airing_today_tvseries_page.dart';
 import 'package:ditonton/presentation/pages/movie_detail_page.dart';
@@ -13,27 +19,41 @@ import 'package:ditonton/presentation/pages/tv_list_page.dart';
 import 'package:ditonton/presentation/pages/tv_series_detail_page.dart';
 import 'package:ditonton/presentation/pages/watchlist_movies_page.dart';
 import 'package:ditonton/presentation/pages/watchlist_tvseries_page.dart';
-import 'package:ditonton/presentation/provider/airing_today_tvseries_notifier.dart';
-import 'package:ditonton/presentation/provider/movie_detail_notifier.dart';
-import 'package:ditonton/presentation/provider/movie_list_notifier.dart';
-import 'package:ditonton/presentation/provider/movie_search_notifier.dart';
-import 'package:ditonton/presentation/provider/popular_movies_notifier.dart';
-import 'package:ditonton/presentation/provider/popular_tvseries_notifier.dart';
-import 'package:ditonton/presentation/provider/top_rated_movies_notifier.dart';
-import 'package:ditonton/presentation/provider/top_rated_tvseries_notifier.dart';
-import 'package:ditonton/presentation/provider/tv_list_notifier.dart';
-import 'package:ditonton/presentation/provider/tv_series_detail_notifier.dart';
-import 'package:ditonton/presentation/provider/tv_series_search_notifier.dart';
-import 'package:ditonton/presentation/provider/watchlist_movie_notifier.dart';
-import 'package:ditonton/presentation/provider/watchlist_tvseries_notifier.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
 import 'package:provider/provider.dart';
 import 'package:ditonton/injection.dart' as di;
 
-void main() {
-  di.init();
-  runApp(MyApp());
+void main() async {
+  runZonedGuarded(
+    () async {
+      WidgetsFlutterBinding.ensureInitialized();
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+
+      // SSL PINNING
+      // Set SecurityContext to not trust the OS's certificates
+      SecurityContext(withTrustedRoots: false);
+      // Load certificate file
+      ByteData data = await rootBundle.load('assets/movie.cer');
+      SecurityContext context = SecurityContext.defaultContext;
+      // Trust the certificate
+      context.setTrustedCertificatesBytes(data.buffer.asUint8List());
+
+      di.init();
+      runApp(MyApp());
+    },
+    (error, stackTrace) {
+      GetIt.I<CaptureErrorUseCase>().call(
+        CaptureErrorParams(error, stackTrace),
+      );
+    },
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -41,44 +61,41 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(
-          create: (_) => di.locator<MovieListNotifier>(),
+        BlocProvider(
+          create: (_) => di.locator<SearchBloc>(),
         ),
-        ChangeNotifierProvider(
-          create: (_) => di.locator<TVListNotifier>(),
+        BlocProvider(
+          create: (_) => di.locator<MoviesBloc>(),
         ),
-        ChangeNotifierProvider(
-          create: (_) => di.locator<AiringTodayTVSeriesNotifier>(),
+        BlocProvider(
+          create: (_) => di.locator<PopularBloc>(),
         ),
-        ChangeNotifierProvider(
-          create: (_) => di.locator<PopularTVSeriesNotifier>(),
+        BlocProvider(
+          create: (_) => di.locator<TopRatedBloc>(),
         ),
-        ChangeNotifierProvider(
-          create: (_) => di.locator<TopRatedTVSeriesNotifier>(),
+        BlocProvider(
+          create: (_) => di.locator<MovieWatchlistBloc>(),
         ),
-        ChangeNotifierProvider(
-          create: (_) => di.locator<TVSeriesDetailNotifier>(),
+        BlocProvider(
+          create: (_) => di.locator<MovieDetailBloc>(),
         ),
-        ChangeNotifierProvider(
-          create: (_) => di.locator<WatchlistTVSeriesNotifier>(),
+        BlocProvider(
+          create: (_) => di.locator<TVBloc>(),
         ),
-        ChangeNotifierProvider(
-          create: (_) => di.locator<MovieDetailNotifier>(),
+        BlocProvider(
+          create: (_) => di.locator<AiringTodayBloc>(),
         ),
-        ChangeNotifierProvider(
-          create: (_) => di.locator<MovieSearchNotifier>(),
+        BlocProvider(
+          create: (_) => di.locator<PopularTVBloc>(),
         ),
-        ChangeNotifierProvider(
-          create: (_) => di.locator<TVSeriesSearchNotifier>(),
+        BlocProvider(
+          create: (_) => di.locator<TopRatedTVBloc>(),
         ),
-        ChangeNotifierProvider(
-          create: (_) => di.locator<TopRatedMoviesNotifier>(),
+        BlocProvider(
+          create: (_) => di.locator<TVWatchlistBloc>(),
         ),
-        ChangeNotifierProvider(
-          create: (_) => di.locator<PopularMoviesNotifier>(),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => di.locator<WatchlistMovieNotifier>(),
+        BlocProvider(
+          create: (_) => di.locator<TVSeriesDetailBloc>(),
         ),
       ],
       child: MaterialApp(
@@ -102,7 +119,8 @@ class MyApp extends StatelessWidget {
             case TVListPage.ROUTE_NAME:
               return CupertinoPageRoute(builder: (_) => TVListPage());
             case AiringTodayTVSeriesPage.ROUTE_NAME:
-              return CupertinoPageRoute(builder: (_) => AiringTodayTVSeriesPage());
+              return CupertinoPageRoute(
+                  builder: (_) => AiringTodayTVSeriesPage());
             case PopularTVSeriesPage.ROUTE_NAME:
               return CupertinoPageRoute(builder: (_) => PopularTVSeriesPage());
             case TopRatedTVSeriesPage.ROUTE_NAME:
