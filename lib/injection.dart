@@ -1,4 +1,5 @@
 import 'package:ditonton/common/crashnalytic.dart';
+import 'package:ditonton/common/ssl_pinning.dart';
 import 'package:ditonton/data/datasources/db/database_helper.dart';
 import 'package:ditonton/data/datasources/movie_local_data_source.dart';
 import 'package:ditonton/data/datasources/movie_remote_data_source.dart';
@@ -26,12 +27,13 @@ import 'package:ditonton/domain/usecases/search_tv_series.dart';
 import 'package:ditonton/presentation/bloc/bloc.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
-import 'package:http/http.dart' as http;
+import 'package:http/io_client.dart';
 import 'package:get_it/get_it.dart';
 
 final locator = GetIt.instance;
 
 void init() {
+
   // bloc
   locator.registerFactory(
     () => SearchBloc(
@@ -147,11 +149,16 @@ void init() {
   // helper
   locator.registerLazySingleton<DatabaseHelper>(() => DatabaseHelper());
 
-  // external
-  locator.registerLazySingleton(() => http.Client());
 
   // FIREBASE ANALYTICS & CRASHLYTICS
   locator.registerLazySingleton(() => FirebaseCrashlytics.instance);
   locator.registerLazySingleton(() => FirebaseAnalytics.instance);
   locator.registerLazySingleton(() => CaptureErrorUseCase(locator()));
+}
+
+Future<void> initHttpClient() async {
+  IOClient ioClient = await SslPinning.ioClient;
+
+  // external i.e. http client
+  locator.registerLazySingleton<IOClient>(() => ioClient);
 }

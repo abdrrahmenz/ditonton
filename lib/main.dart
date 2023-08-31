@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:ditonton/common/constants.dart';
 import 'package:ditonton/common/crashnalytic.dart';
@@ -22,7 +21,6 @@ import 'package:ditonton/presentation/pages/watchlist_tvseries_page.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:provider/provider.dart';
@@ -32,20 +30,16 @@ void main() async {
   runZonedGuarded(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
+
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
       );
 
-      // SSL PINNING
-      // Set SecurityContext to not trust the OS's certificates
-      SecurityContext(withTrustedRoots: false);
-      // Load certificate file
-      ByteData data = await rootBundle.load('assets/movie.cer');
-      SecurityContext context = SecurityContext.defaultContext;
-      // Trust the certificate
-      context.setTrustedCertificatesBytes(data.buffer.asUint8List());
+      // init Http Client
+      await di.initHttpClient();
 
       di.init();
+
       runApp(MyApp());
     },
     (error, stackTrace) {
